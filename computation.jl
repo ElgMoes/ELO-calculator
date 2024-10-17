@@ -5,7 +5,7 @@ using CSV
 using ProgressMeter
 include("setup.jl")
 
-df = create_players(1500)
+df = create_players(15000)
 
 function average_skill(df)
     return mean(df.skill)
@@ -24,11 +24,13 @@ function create_groups(df, range)
 end
 
 function merge_dataframe!(df, df_new)
+    id_to_index = Dict(row.id => idx for (idx, row) in enumerate(eachrow(df)))
+    
     for row in eachrow(df_new)
-        idx = findfirst(x -> x == row.id, df.id)
+        idx = get(id_to_index, row.id, nothing)
         if idx !== nothing
             df.score[idx] = row.score
-            push!(df.score_history[idx], row.score)
+            append!(df.score_history[idx], row.score)
         end
     end
 end
@@ -57,7 +59,7 @@ end
 
 function play_round!(df, rounds)
     K = rounds < 30 ? 40 : rounds < 200 ? 20 : 10
-    for i in 1:(nrow(df)/10)
+    Threads.@threads for i in 1:(nrow(df)/10)
         range = Int(round(10*i - 9)):Int(round(10*i))
         df = play_game!(df, range, K)
     end
@@ -72,6 +74,6 @@ function simulate!(df, rounds)
     return df
 end
 
-df = simulate!(df, 1)
+df = simulate!(df, 100)
 
 CSV.write("out.csv",df)
