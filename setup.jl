@@ -17,10 +17,10 @@ function create_players(players)
 
     df = DataFrame(
         id=String[],
-        score=UInt16[],
+        score=Int64[],
         skill=Float64[],
         consistency=Float64[],
-        score_history=Vector{UInt16}[]
+        score_history=Vector{Int64}[]
     );
 
     for i in 1:players

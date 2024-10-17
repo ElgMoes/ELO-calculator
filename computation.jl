@@ -23,7 +23,7 @@ function create_groups(df, range)
     return group1_df, group2_df
 end
 
-function merge_dataframe(df, df_new)
+function merge_dataframe!(df, df_new)
     for row in eachrow(df_new)
         idx = findfirst(x -> x == row.id, df.id)
         if idx !== nothing
@@ -33,7 +33,7 @@ function merge_dataframe(df, df_new)
     end
 end
 
-function play_game(df, range)
+function play_game!(df, range, K)
     group1_df, group2_df = create_groups(df, range)
 
     skill1 = average_skill(group1_df)
@@ -41,8 +41,6 @@ function play_game(df, range)
 
     E1 = 1/(1+10^((skill2-skill1)/400))
     E2 = 1/(1+10^((skill1-skill2)/400))
-
-    K = 32
 
     if skill1 > skill2
         group1_df.score .+= round.(K*(1-E1))
@@ -52,27 +50,28 @@ function play_game(df, range)
         group2_df.score .+= round.(K*(1-E2))
     end
 
-    merge_dataframe(df, group1_df)
-    merge_dataframe(df, group2_df)
+    merge_dataframe!(df, group1_df)
+    merge_dataframe!(df, group2_df)
     return df
 end
 
-function play_round(df)
+function play_round!(df, rounds)
+    K = rounds < 30 ? 40 : rounds < 200 ? 20 : 10
     for i in 1:(nrow(df)/10)
         range = Int(round(10*i - 9)):Int(round(10*i))
-        df = play_game(df, range)
+        df = play_game!(df, range, K)
     end
     sort!(df, :score)
     return df
 end
 
-function simulate(df, rounds)
-    @showprogress for i in 1:rounds
-        df = play_round(df)
+function simulate!(df, rounds)
+    @showprogress for round in 1:rounds
+        df = play_round!(df, round)
     end
     return df
 end
 
-df = simulate(df, 100)
+df = simulate!(df, 1)
 
 CSV.write("out.csv",df)
